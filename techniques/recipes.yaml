@@ -1,0 +1,51 @@
+# Composite Technique Recipes — Pre-built stacks for common task types
+# Each recipe: 2-4 techniques composed for synergy
+
+recipes:
+  deep_reasoning:
+    techniques: [meta_prompting, chain_of_thought, self_consistency]
+    task_type: Complex analytical tasks
+    research: "Suzgun 2024 + Wei 2022 + Wang 2022"
+    description: "Meta prevents bias, CoT provides reasoning, Self-Consistency eliminates flukes"
+
+  creative_exploration:
+    techniques: [emotion_prompt, tree_of_thoughts, self_refine]
+    task_type: Creative and design tasks
+    research: "Li 2023 + Yao 2023 + Madaan 2023"
+    description: "Emotion sets stakes, ToT explores branches, Self-Refine polishes"
+
+  bulletproof_agent:
+    techniques: [react, constitutional_ai, recursive_verification]
+    task_type: Production agents handling sensitive data
+    research: "Yao 2022 + Bai 2022 + Dhuliawala 2023"
+    description: "ReAct for tools, Constitutional for safety, RecVerify for accuracy"
+
+  knowledge_synthesis:
+    techniques: [graph_of_thoughts, cumulative_reasoning, chain_of_density]
+    task_type: Research consolidation and synthesis
+    research: "Besta 2024 + Zhang 2023 + Adams 2023"
+    description: "GoT connects sources, CumReasoning verifies, CoD compresses"
+
+  code_generation:
+    techniques: [self_debugging, contrastive_cot]
+    task_type: Code that must work correctly
+    research: "Chen 2023 + Chia 2023"
+    description: "Self-Debug for correctness, Contrastive prevents common bugs"
+
+  multi_agent_orchestration:
+    techniques: [peer, graph_of_thoughts, handoff_schemas]
+    task_type: Agent squad coordination
+    research: "Wang 2025 + Besta 2024"
+    description: "PEER for adaptive planning, GoT for connections, schemas for contracts"
+
+  context_architecture:
+    techniques: [step_back, recursive_summarization, token_budget]
+    task_type: Full context system design
+    research: "Zheng 2023 + Adams 2023 + Liu 2023"
+    description: "Step-Back for principles, RecSumm for compression, Budget for allocation"
+
+  domain_specific:
+    techniques: [step_back, few_shot, never_always_rules]
+    task_type: Niche/vertical prompt optimization
+    research: "Zhao 2025 (NeurIPS)"
+    description: "Domain principles + targeted examples + hard constraints"

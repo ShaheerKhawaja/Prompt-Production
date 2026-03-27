@@ -1,0 +1,206 @@
+# Technique Registry — 30 core techniques (expandable to 58+)
+# Based on The Prompt Report (arXiv:2406.06608) taxonomy
+# Each technique has: category, when_to_use, when_not_to_use, research, impact
+
+techniques:
+  # THOUGHT GENERATION
+  chain_of_thought:
+    category: thought_generation
+    when_to_use: Complex multi-step reasoning requiring explicit logic
+    when_not_to_use: Simple tasks on frontier models (hurts accuracy — arXiv:2506.07142)
+    research: Wei et al. 2022
+    impact: "+20-30% on complex tasks"
+
+  tree_of_thoughts:
+    category: thought_generation
+    when_to_use: Creative/planning tasks with multiple valid paths
+    when_not_to_use: Linear sequential tasks
+    research: Yao et al. 2023
+    impact: "+70% on planning tasks"
+
+  graph_of_thoughts:
+    category: thought_generation
+    when_to_use: Synthesis from multiple sources, finding connections
+    when_not_to_use: Single-source analysis
+    research: Besta et al. 2024
+    impact: "+51% on complex synthesis"
+
+  step_back:
+    category: thought_generation
+    when_to_use: Domain-specific problems needing principle extraction
+    when_not_to_use: Tasks with clear instructions already given
+    research: Zheng et al. 2023
+    impact: "+15% on domain problems"
+
+  plan_and_solve:
+    category: thought_generation
+    when_to_use: Multi-step tasks needing upfront planning
+    when_not_to_use: Simple single-step tasks
+    research: Wang et al. 2023
+    impact: "+5-12% on math/reasoning"
+
+  cumulative_reasoning:
+    category: thought_generation
+    when_to_use: Building conclusions from verified evidence chains
+    when_not_to_use: Tasks not requiring incremental logic
+    research: Zhang et al. 2023
+    impact: "+2.4% on logical reasoning"
+
+  # VERIFICATION & SELF-CORRECTION
+  self_consistency:
+    category: verification
+    when_to_use: When reliability matters (generate 3 answers, take majority)
+    when_not_to_use: Cost-sensitive scenarios (3x tokens)
+    research: Wang et al. 2022
+    impact: "Eliminates flukes"
+
+  self_refine:
+    category: verification
+    when_to_use: Human-facing text that needs polish
+    when_not_to_use: Code generation (use self_debugging instead)
+    research: Madaan et al. 2023
+    impact: "+20% human preference"
+
+  recursive_verification:
+    category: verification
+    when_to_use: High-stakes claims (P0/P1 findings)
+    when_not_to_use: Low-stakes informational output
+    research: Dhuliawala et al. 2023
+    impact: "-60% hallucination"
+
+  constitutional_ai:
+    category: verification
+    when_to_use: Any output needing safety/principle alignment
+    when_not_to_use: Pure computation tasks
+    research: Bai et al. 2022
+    impact: "Enforces principles"
+
+  contrastive_cot:
+    category: verification
+    when_to_use: When common mistakes are well-known
+    when_not_to_use: Novel unexplored domains
+    research: Chia et al. 2023
+    impact: "+10-15% error prevention"
+
+  # AGENTIC PATTERNS
+  react:
+    category: agentic
+    when_to_use: Tool-using agents (THOUGHT->ACTION->OBSERVATION)
+    when_not_to_use: Agents without tool access
+    research: Yao et al. 2022
+    impact: "Grounded tool use"
+
+  peer:
+    category: agentic
+    when_to_use: Adaptive plans that may need mid-course correction
+    when_not_to_use: Fixed sequential workflows
+    research: Wang et al. 2025
+    impact: "Self-correcting plans"
+
+  self_debugging:
+    category: agentic
+    when_to_use: Code generation (GENERATE->EXECUTE->OBSERVE->FIX)
+    when_not_to_use: Non-code output
+    research: Chen et al. 2023
+    impact: "+15.9% on code gen"
+
+  lats:
+    category: agentic
+    when_to_use: Complex decisions with multiple valid approaches
+    when_not_to_use: Simple routing (3-10x cost)
+    research: Koh et al. 2024
+    impact: "+14% on HumanEval"
+
+  reflexion:
+    category: agentic
+    when_to_use: Tasks requiring learning from prior failures
+    when_not_to_use: First-attempt tasks without history
+    research: Shinn et al. 2023
+    impact: "+11% pass@1 on code"
+
+  # META & RECURSIVE
+  meta_prompting:
+    category: meta
+    when_to_use: Self-reflection, bias check before action
+    when_not_to_use: Time-critical fast paths
+    research: Suzgun & Kalai 2024
+    impact: "Prevents premature conclusions"
+
+  emotion_prompt:
+    category: meta
+    when_to_use: Calibrate stakes to task importance
+    when_not_to_use: Neutral analysis where emotion biases
+    research: Li et al. 2023
+    impact: "+8-10.9% accuracy"
+
+  few_shot:
+    category: meta
+    when_to_use: When output format needs demonstration
+    when_not_to_use: When context window is tight
+    research: Brown et al. 2020
+    impact: "Highest-ROI for Claude"
+
+  recursive_decomposition:
+    category: meta
+    when_to_use: Tasks too complex for single-pass
+    when_not_to_use: Already-atomic tasks
+    research: MIT RLM 2025
+    impact: "100x context handling"
+
+  # COMPRESSION & CONTEXT
+  chain_of_density:
+    category: compression
+    when_to_use: Summaries, handoffs (3x efficiency)
+    when_not_to_use: First-draft exploration
+    research: Adams et al. 2023
+    impact: "3x context efficiency"
+
+  recursive_summarization:
+    category: compression
+    when_to_use: Multi-document compression
+    when_not_to_use: Single short document
+    research: Extended CoD
+    impact: "3-5x density"
+
+  token_budget:
+    category: compression
+    when_to_use: Context window optimization
+    when_not_to_use: Simple prompts under 1K tokens
+    research: Lost-in-the-Middle (Liu et al.)
+    impact: "+30% recall with proper placement"
+
+  # STRUCTURAL
+  phase_flow:
+    category: structural
+    when_to_use: Multi-turn conversation agents
+    when_not_to_use: Single-turn tasks
+    research: Production pattern
+    impact: "Consistent conversation structure"
+
+  never_always_rules:
+    category: structural
+    when_to_use: High-stakes behaviors needing hard constraints
+    when_not_to_use: Flexible creative tasks
+    research: Production pattern
+    impact: "Prevents critical failures"
+
+  handoff_schemas:
+    category: structural
+    when_to_use: Multi-agent systems with delegation
+    when_not_to_use: Single-agent systems
+    research: Anthropic agent harness pattern
+    impact: "Clean agent-to-agent communication"
+
+  structured_output:
+    category: structural
+    when_to_use: When output must conform to JSON/XML schema
+    when_not_to_use: Free-form text generation
+    research: API-native feature (2025+)
+    impact: "100% format compliance"
+
+  direct_instruction:
+    category: structural
+    when_to_use: Simple tasks where the model knows the domain
+    when_not_to_use: Tasks requiring multi-step reasoning
+    research: Anthropic best practices 2026
+    impact: "Frontier models follow literal instructions"
