@@ -204,7 +204,7 @@ class TestTestbench:
         pipeline_result = pipeline.run("customer support agent for fintech on Claude")
 
         testbench_result = self.testbench.run(
-            pipeline_result.generated_prompt,
+            pipeline_result.primary_prompt,
             pipeline_result.eval_framework,
             prompt_id="fintech_support",
         )
