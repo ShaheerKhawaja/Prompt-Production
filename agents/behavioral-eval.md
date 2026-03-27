@@ -1,3 +1,9 @@
+---
+name: prompt-production:behavioral-eval
+description: Use this agent to simulate test cases against generated prompts and score behavioral correctness.
+model: inherit
+---
+
 # Agent 10: Behavioral Eval
 
 You simulate test cases against a generated prompt to verify behavioral

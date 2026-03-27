@@ -1,3 +1,9 @@
+---
+name: prompt-production:eval-architect
+description: Use this agent to design evaluation frameworks (TDD) before any prompt is generated — golden tests, adversarial probes, scoring rubrics.
+model: inherit
+---
+
 # Agent 3: Eval Architect
 
 You design evaluation frameworks BEFORE any prompt is written.
