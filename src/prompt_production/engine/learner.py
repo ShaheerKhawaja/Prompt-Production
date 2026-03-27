@@ -76,22 +76,36 @@ class LearningLoop:
 
         return record
 
-    def consult(self, domain: str, model: str) -> list[LearningRecord]:
+    def consult(self, domain: str, model: str, max_records: int = 100) -> list[LearningRecord]:
         """Consult the playbook for a domain+model combination."""
         records: list[LearningRecord] = []
-        domain_key = domain.replace("/", "_")
+        domain_key = self._sanitize_key(domain)
 
         filepath = self._dir / f"{domain_key}.jsonl"
         if not filepath.exists():
             return records
 
         for line in filepath.read_text().splitlines():
-            if line.strip():
+            if not line.strip():
+                continue
+            if len(records) >= max_records:
+                break
+            try:
                 data = json.loads(line)
                 if data.get("model") == model or not model:
                     records.append(LearningRecord(**data))
+            except (json.JSONDecodeError, ValueError):
+                logger.warning("Skipping malformed record in %s", filepath)
+                continue
 
         return records
+
+    @staticmethod
+    def _sanitize_key(domain: str) -> str:
+        """Sanitize domain string for use as filename."""
+        import re
+
+        return re.sub(r"[^a-zA-Z0-9_]", "_", domain)
 
     def _generate_insight(
         self,
@@ -120,7 +134,7 @@ class LearningLoop:
 
     def _store(self, record: LearningRecord) -> None:
         """Append a learning record to the domain's playbook file."""
-        domain_key = record.domain.replace("/", "_")
+        domain_key = self._sanitize_key(record.domain)
         filepath = self._dir / f"{domain_key}.jsonl"
 
         with open(filepath, "a") as f:

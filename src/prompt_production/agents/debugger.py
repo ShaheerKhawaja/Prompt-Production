@@ -33,6 +33,8 @@ class FailureType(StrEnum):
     MODEL_INCOMPATIBILITY = "model_incompatibility"
     CONTEXT_ROT = "context_rot"
     KNOWLEDGE_GAP = "knowledge_gap"
+    HALLUCINATION = "hallucination"
+    SAFETY_VIOLATION = "safety_violation"
     ANTIPATTERN = "antipattern"
     STRUCTURAL = "structural"
 
@@ -119,7 +121,7 @@ class DebuggerAgent(BaseAgent):
                 f"Over-composed: {len(prompt.techniques_used)} techniques. Max 4. Drop the lowest-priority ones."
             )
 
-        # Analyze bad output for context rot signals
+        # Analyze bad output for failure signals
         if bad_output:
             bad_lower = bad_output.lower()
             if any(s in bad_lower for s in ["i don't have", "as an ai", "i cannot", "i'm not sure"]):
@@ -132,17 +134,33 @@ class DebuggerAgent(BaseAgent):
                 fixes.append(
                     "Context rot detected. Add conversation summarization protocol or reduce context window usage."
                 )
+            # Hallucination detection
+            hallucination_signals = ["according to", "studies show", "research indicates", "it is well known"]
+            if any(s in bad_lower for s in hallucination_signals) and "cite" not in content:
+                failure_types.append(FailureType.HALLUCINATION)
+                affected.append("grounding/citations")
+                fixes.append(
+                    "Hallucination detected. Add grounding constraints: require citations or tool verification."
+                )
+            # Safety violation detection
+            safety_signals = ["sure, i can help with that harmful", "here is how to", "bypass", "hack", "exploit"]
+            if any(s in bad_lower for s in safety_signals):
+                failure_types.append(FailureType.SAFETY_VIOLATION)
+                affected.append("safety constraints")
+                fixes.append("Safety boundary violated. Add Constitutional AI constraints and adversarial test cases.")
 
         if not failure_types:
             failure_types.append(FailureType.STRUCTURAL)
             fixes.append("No obvious issues found. Consider running with real test cases for deeper diagnosis.")
 
-        # Determine severity
+        # Determine severity (ascending priority — later assignments override earlier)
         severity = "low"
-        if FailureType.ANTIPATTERN in failure_types or FailureType.MODEL_INCOMPATIBILITY in failure_types:
-            severity = "high"
         if FailureType.KNOWLEDGE_GAP in failure_types or FailureType.CONTEXT_ROT in failure_types:
             severity = "medium"
+        if FailureType.ANTIPATTERN in failure_types or FailureType.MODEL_INCOMPATIBILITY in failure_types:
+            severity = "high"
+        if FailureType.SAFETY_VIOLATION in failure_types or FailureType.HALLUCINATION in failure_types:
+            severity = "critical"
         if len(failure_types) >= 3:
             severity = "critical"
 
