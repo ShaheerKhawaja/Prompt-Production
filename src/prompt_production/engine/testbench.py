@@ -98,7 +98,8 @@ class Testbench:
         struct_pass = structural.score >= STRUCTURAL_THRESHOLD
         behav_rate = behavioral.tests_passed / max(behavioral.tests_total, 1)
         behav_pass = behav_rate >= BEHAVIORAL_PASS_RATE
-        regression_ok = not regression.regressions or regression.recommendation != "revert"
+        from prompt_production.types import Recommendation
+        regression_ok = not regression.regressions or regression.recommendation != Recommendation.REVERT
 
         passed = struct_pass and behav_pass and regression_ok
 
@@ -113,7 +114,7 @@ class Testbench:
         return GateVerdict(
             passed=passed,
             structural_score=structural.score,
-            behavioral_pass_rate=behavioral.tests_passed,
+            behavioral_pass_count=behavioral.tests_passed,
             behavioral_total=behavioral.tests_total,
             regression_delta=regression.score_delta,
             iteration=iteration,

@@ -9,6 +9,7 @@ from prompt_production.types import (
     EvalFramework,
     EvalTestCase,
     GeneratedPrompt,
+    Recommendation,
     ScoringRubric,
     StructuralScore,
     Tier,
@@ -114,7 +115,7 @@ class TestRegressionEvalAgent:
         )
         result = self.agent.assess("test_prompt", structural, behavioral, "1.0.0")
         assert result.is_baseline is True
-        assert result.recommendation == "baseline_established"
+        assert result.recommendation == Recommendation.BASELINE_ESTABLISHED
 
     def test_improvement_detected(self):
         # Establish baseline with low scores
@@ -143,7 +144,7 @@ class TestRegressionEvalAgent:
         assert result.is_baseline is False
         assert result.score_delta > 0
         assert len(result.improvements) > 0
-        assert result.recommendation == "keep"
+        assert result.recommendation == Recommendation.KEEP
 
     def test_regression_detected(self):
         # Baseline with high scores
@@ -172,7 +173,7 @@ class TestRegressionEvalAgent:
         assert result.is_baseline is False
         assert result.score_delta < 0
         assert len(result.regressions) > 0
-        assert result.recommendation == "revert"
+        assert result.recommendation == Recommendation.REVERT
 
 
 class TestTestbench:

@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Any
 
 from prompt_production.agents.base import AgentConfig, BaseAgent
-from prompt_production.types import BehavioralScore, RegressionScore, StructuralScore
+from prompt_production.types import BehavioralScore, Recommendation, RegressionScore, StructuralScore
 
 AGENT_CONFIG = AgentConfig(
     name="regression_eval",
@@ -52,7 +52,7 @@ class RegressionEvalAgent(BaseAgent):
                 score_delta=0.0,
                 regressions=[],
                 improvements=[],
-                recommendation="baseline_established",
+                recommendation=Recommendation.BASELINE_ESTABLISHED,
             )
 
         # Compare against baseline
@@ -73,15 +73,14 @@ class RegressionEvalAgent(BaseAgent):
 
         # Determine recommendation
         if regressions and not improvements:
-            recommendation = "revert"
+            recommendation = Recommendation.REVERT
         elif regressions and improvements:
-            recommendation = "review"
+            recommendation = Recommendation.REVIEW
         elif improvements:
-            recommendation = "keep"
-            # Update baseline
+            recommendation = Recommendation.KEEP
             self._baselines[prompt_id] = current_scores
         else:
-            recommendation = "keep"
+            recommendation = Recommendation.KEEP
 
         return RegressionScore(
             is_baseline=False,

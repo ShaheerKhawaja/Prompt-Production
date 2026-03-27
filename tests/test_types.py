@@ -140,7 +140,7 @@ class TestGateVerdict:
         verdict = GateVerdict(
             passed=True,
             structural_score=9.2,
-            behavioral_pass_rate=11,
+            behavioral_pass_count=11,
             behavioral_total=11,
             regression_delta=0.0,
             iteration=1,
@@ -151,7 +151,7 @@ class TestGateVerdict:
         verdict = GateVerdict(
             passed=False,
             structural_score=6.5,
-            behavioral_pass_rate=7,
+            behavioral_pass_count=7,
             behavioral_total=11,
             regression_delta=-0.5,
             iteration=1,
@@ -162,7 +162,7 @@ class TestGateVerdict:
         verdict = GateVerdict(
             passed=False,
             structural_score=6.5,
-            behavioral_pass_rate=7,
+            behavioral_pass_count=7,
             behavioral_total=11,
             regression_delta=-0.5,
             iteration=3,
