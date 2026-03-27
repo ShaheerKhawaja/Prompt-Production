@@ -1,24 +1,31 @@
 """Main pipeline orchestrator for Prompt Production.
 
-Wires the 5-phase flow: UNDERSTAND -> DESIGN EVALS -> GENERATE -> TEST -> DELIVER.
-Phase 1 MVP: Agents 1 -> 2 -> 3 -> 6 -> 9 (Niche -> Decompose -> Eval -> Generate -> StructuralEval).
+Wires the complete 6-phase flow:
+  UNDERSTAND -> DESIGN EVALS -> SELECT TECHNIQUES -> GENERATE -> TEST -> DELIVER
+
+All 13 agents are connected. The router dispatches to the correct tier specialist.
+The testbench runs all 3 eval agents. The learning loop curates lessons after delivery.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from prompt_production.agents.eval_architect import EvalArchitectAgent
 from prompt_production.agents.niche_analyzer import NicheAnalyzerAgent
-from prompt_production.agents.structural_eval import StructuralEvalAgent
 from prompt_production.agents.task_decomposer import TaskDecomposerAgent
+from prompt_production.engine.composer import TechniqueComposer
+from prompt_production.engine.learner import LearningLoop
+from prompt_production.engine.router import ComplexityRouter
+from prompt_production.engine.testbench import Testbench, TestbenchResult
 from prompt_production.types import (
     EvalFramework,
     GeneratedPrompt,
+    LearningRecord,
     NicheProfile,
-    StructuralScore,
     TaskGraph,
+    TechniqueSelection,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,154 +33,168 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PipelineResult:
-    """Result from running the pipeline."""
+    """Full result from running the pipeline."""
 
     niche_profile: NicheProfile
     task_graph: TaskGraph
     eval_framework: EvalFramework
-    generated_prompt: GeneratedPrompt
-    structural_score: StructuralScore
+    technique_selection: TechniqueSelection
+    generated_prompts: list[GeneratedPrompt]
+    testbench_result: TestbenchResult
+    learning_record: LearningRecord | None
     passed_gate: bool
+    failure_modes: list[str] = field(default_factory=list)
+
+    @property
+    def primary_prompt(self) -> GeneratedPrompt:
+        """The main generated prompt (first in list)."""
+        return self.generated_prompts[0]
 
 
 class Pipeline:
-    """Main pipeline orchestrator.
+    """Complete 6-phase pipeline orchestrator.
 
-    Phase 1 MVP flow:
-    1. Niche Analyzer (Agent 1) -> NicheProfile
-    2. Task Decomposer (Agent 2) -> TaskGraph
-    3. Assessment Architect (Agent 3) -> EvalFramework
-    4. Generate prompt (stub for Agent 6) -> GeneratedPrompt
-    5. Structural Assessment (Agent 9) -> StructuralScore
+    Phase 1: UNDERSTAND (Agents 1-2)
+    Phase 2: DESIGN EVALS (Agent 3 — TDD)
+    Phase 3: SELECT TECHNIQUES (Composer)
+    Phase 4: GENERATE (Router -> Agents 4-8)
+    Phase 5: TEST (Testbench -> Agents 9-11 -> Gate -> Fix Loop)
+    Phase 6: LEARN + DELIVER (Learning Loop)
     """
 
     def __init__(self) -> None:
         self.niche_analyzer = NicheAnalyzerAgent()
         self.task_decomposer = TaskDecomposerAgent()
         self.eval_architect = EvalArchitectAgent()
-        self.structural_eval = StructuralEvalAgent()
+        self.composer = TechniqueComposer()
+        self.router = ComplexityRouter()
+        self.testbench = Testbench()
+        self.learner = LearningLoop()
 
     def run(self, user_request: str) -> PipelineResult:
-        """Execute the full pipeline for a user request."""
+        """Execute the complete 6-phase pipeline."""
         logger.info("Pipeline started: %s", user_request[:80])
 
         # Phase 1: UNDERSTAND
-        logger.info("Phase 1: Niche Analysis")
+        logger.info("Phase 1: UNDERSTAND")
         niche_profile = self.niche_analyzer.analyze_request(user_request)
-        logger.info("  Domain: %s | Tier: %s | Approach: %s",
-                     niche_profile.domain, niche_profile.tier_hint.name, niche_profile.approach.value)
+        logger.info(
+            "  Domain: %s | Tier: %s | Approach: %s",
+            niche_profile.domain,
+            niche_profile.tier_hint.name,
+            niche_profile.approach.value,
+        )
 
-        logger.info("Phase 1: Task Decomposition")
         task_graph = self.task_decomposer.decompose(niche_profile, user_request)
-        logger.info("  Subtasks: %d | Tier: %s | Order: %s",
-                     len(task_graph.subtasks), task_graph.overall_tier.name, task_graph.execution_order)
+        logger.info(
+            "  Subtasks: %d | Tier: %s | Order: %s",
+            len(task_graph.subtasks),
+            task_graph.overall_tier.name,
+            task_graph.execution_order,
+        )
 
         # Phase 2: DESIGN EVALS FIRST (TDD)
-        logger.info("Phase 2: Assessment Framework Design (TDD)")
+        logger.info("Phase 2: DESIGN EVALS (TDD)")
         eval_framework = self.eval_architect.design_framework(niche_profile, task_graph)
-        logger.info("  Tests: %d (golden) + %d (adversarial) + %d (edge)",
-                     len(eval_framework.test_cases) - eval_framework.adversarial_count - eval_framework.edge_case_count,
-                     eval_framework.adversarial_count, eval_framework.edge_case_count)
+        golden_count = (
+            len(eval_framework.test_cases) - eval_framework.adversarial_count - eval_framework.edge_case_count
+        )
+        logger.info(
+            "  Tests: %d golden + %d adversarial + %d edge",
+            golden_count,
+            eval_framework.adversarial_count,
+            eval_framework.edge_case_count,
+        )
 
-        # Phase 3: GENERATE (stub for Phase 1 — Agent 6 will replace this)
-        logger.info("Phase 3: Prompt Generation")
-        generated_prompt = self._generate_stub(niche_profile, task_graph, eval_framework)
-        logger.info("  Tokens: %d | Model: %s", generated_prompt.token_count, generated_prompt.model_target)
+        # Phase 3: SELECT TECHNIQUES
+        logger.info("Phase 3: SELECT TECHNIQUES")
+        task_type = self._infer_task_type(user_request)
+        technique_selection = self.composer.select(task_graph, task_type)
+        logger.info(
+            "  Techniques: %s | Recipe: %s",
+            technique_selection.techniques,
+            technique_selection.recipe_name or "custom",
+        )
 
-        # Phase 4: TEST (structural only in Phase 1)
-        logger.info("Phase 4: Structural Assessment")
-        structural_score = self.structural_eval.evaluate(generated_prompt)
-        logger.info("  Score: %.1f/10 | Anti-patterns: %d | Issues: %d",
-                     structural_score.score, len(structural_score.antipatterns_found), len(structural_score.issues))
+        # Phase 4: GENERATE (via complexity router)
+        logger.info("Phase 4: GENERATE (Tier %d)", task_graph.overall_tier.value)
+        generated_prompts = self.router.route(niche_profile, task_graph, eval_framework)
+        logger.info(
+            "  Generated %d prompt(s), total %d tokens",
+            len(generated_prompts),
+            sum(p.token_count for p in generated_prompts),
+        )
 
-        passed = structural_score.score >= 8.0
+        # Phase 5: TEST (full testbench — structural + behavioral + regression)
+        logger.info("Phase 5: TEST")
+        primary_prompt = generated_prompts[0]
+        prompt_id = f"{niche_profile.domain}_{task_graph.overall_tier.name}".lower()
+        testbench_result = self.testbench.run(primary_prompt, eval_framework, prompt_id)
+        logger.info(
+            "  Structural: %.1f | Behavioral: %d/%d | Gate: %s",
+            testbench_result.verdict.structural_score,
+            testbench_result.verdict.behavioral_pass_count,
+            testbench_result.verdict.behavioral_total,
+            "PASS" if testbench_result.verdict.passed else "FAIL",
+        )
 
-        logger.info("Pipeline %s (score: %.1f)", "PASSED" if passed else "FAILED", structural_score.score)
+        # Phase 5b: FIX LOOP
+        # Note: With rule-based agents (no LLM), regeneration is deterministic
+        # so the fix loop is a no-op. With LLM-backed agents, each regeneration
+        # would incorporate fix suggestions to produce improved output.
+        # For now, we accept the first result without looping.
+
+        # Phase 6: LEARN + DELIVER
+        logger.info("Phase 6: LEARN + DELIVER")
+        learning_record = self.learner.reflect_and_curate(niche_profile, technique_selection, testbench_result.result)
+        logger.info("  Insight: %s", learning_record.key_insight[:80])
+
+        # Generate failure modes
+        failure_modes = self._generate_failure_modes(niche_profile, testbench_result)
+
+        passed = testbench_result.verdict.passed
+        logger.info(
+            "Pipeline %s (score: %.1f)",
+            "PASSED" if passed else "DELIVERED WITH CAVEATS",
+            testbench_result.verdict.structural_score,
+        )
 
         return PipelineResult(
             niche_profile=niche_profile,
             task_graph=task_graph,
             eval_framework=eval_framework,
-            generated_prompt=generated_prompt,
-            structural_score=structural_score,
+            technique_selection=technique_selection,
+            generated_prompts=generated_prompts,
+            testbench_result=testbench_result,
+            learning_record=learning_record,
             passed_gate=passed,
+            failure_modes=failure_modes,
         )
 
-    def _generate_stub(
-        self,
-        profile: NicheProfile,
-        graph: TaskGraph,
-        framework: EvalFramework,
-    ) -> GeneratedPrompt:
-        """Stub prompt generator for Phase 1 MVP.
+    def _infer_task_type(self, request: str) -> str | None:
+        """Infer the task type for technique selection."""
+        req = request.lower()
+        type_map = {
+            "tool_using": ["tool", "api", "database", "function"],
+            "conversational": ["chat", "conversation", "support"],
+            "code": ["code", "programming", "review", "debug"],
+            "creative": ["creative", "write", "generate", "design"],
+            "knowledge": ["research", "analyze", "summarize"],
+            "multi_agent": ["multi-agent", "squad", "orchestrat"],
+        }
+        for task_type, keywords in type_map.items():
+            if any(kw in req for kw in keywords):
+                return task_type
+        return None
 
-        Generates a basic but structurally clean prompt.
-        Agent 6 (Complex Engineer) will replace this.
-        """
-        model = profile.model_recommendation
-        domain = profile.domain
-        constraints = profile.constraints
-        antipatterns = profile.domain_antipatterns
-
-        # Build XML-structured prompt for Claude, markdown for GPT
-        if "claude" in model.lower():
-            content = self._build_xml_prompt(domain, constraints, antipatterns, graph)
-        else:
-            content = self._build_markdown_prompt(domain, constraints, antipatterns, graph)
-
-        techniques = []
-        for subtask in graph.subtasks:
-            techniques.extend(subtask.technique_candidates[:2])
-        techniques = list(dict.fromkeys(techniques))[:4]  # Dedupe, cap at 4
-
-        return GeneratedPrompt(
-            content=content,
-            tier=graph.overall_tier,
-            model_target=model,
-            token_count=len(content.split()),
-            techniques_used=techniques,
-            version="1.0.0",
-        )
-
-    def _build_xml_prompt(
-        self, domain: str, constraints: list[str], antipatterns: list[str], graph: TaskGraph
-    ) -> str:
-        parts = [f"<role>You handle {domain.replace('/', ' ')} tasks.</role>"]
-        parts.append("<process>")
-        for i, subtask in enumerate(graph.subtasks, 1):
-            parts.append(f"  {i}. {subtask.description}")
-        parts.append("</process>")
-
-        if constraints:
-            parts.append("<constraints>")
-            for c in constraints:
-                parts.append(f"  - {c.replace('_', ' ').title()}")
-            parts.append("</constraints>")
-
-        if antipatterns:
-            parts.append("<avoid>")
-            for ap in antipatterns:
-                parts.append(f"  - {ap.replace('_', ' ')}")
-            parts.append("</avoid>")
-
-        return "\n".join(parts)
-
-    def _build_markdown_prompt(
-        self, domain: str, constraints: list[str], antipatterns: list[str], graph: TaskGraph
-    ) -> str:
-        parts = [f"# Role\nYou handle {domain.replace('/', ' ')} tasks.\n"]
-        parts.append("## Process")
-        for i, subtask in enumerate(graph.subtasks, 1):
-            parts.append(f"{i}. {subtask.description}")
-
-        if constraints:
-            parts.append("\n## Constraints")
-            for c in constraints:
-                parts.append(f"- {c.replace('_', ' ').title()}")
-
-        if antipatterns:
-            parts.append("\n## Avoid")
-            for ap in antipatterns:
-                parts.append(f"- {ap.replace('_', ' ')}")
-
-        return "\n".join(parts)
+    def _generate_failure_modes(self, profile: NicheProfile, tb: TestbenchResult) -> list[str]:
+        """Generate top failure modes based on domain and test results."""
+        modes = []
+        for ap in profile.domain_antipatterns[:3]:
+            modes.append(f"Domain risk: {ap.replace('_', ' ')}")
+        if tb.fix_suggestions:
+            for fs in tb.fix_suggestions[:2]:
+                modes.append(f"Test finding: {fs.reason}")
+        if not modes:
+            modes.append("No significant failure modes identified in testing")
+        return modes
