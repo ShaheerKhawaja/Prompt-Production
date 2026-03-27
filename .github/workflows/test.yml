@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Lint
+        run: uv run ruff check src/ tests/
+
+      - name: Test with coverage
+        run: uv run pytest tests/ -v --cov=src/prompt_production --cov-report=term-missing --cov-fail-under=85
+
+      - name: Verify plugin structure
+        run: |
+          test -f .claude-plugin/plugin.json
+          test -d agents/
+          test -d commands/
+          test -d skills/
+          echo "Plugin structure valid"
