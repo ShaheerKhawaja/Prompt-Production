@@ -140,6 +140,15 @@ class BehavioralScore(BaseModel):
     edge_case_total: int
 
 
+class Recommendation(StrEnum):
+    """Regression eval recommendation."""
+
+    BASELINE_ESTABLISHED = "baseline_established"
+    KEEP = "keep"
+    REVIEW = "review"
+    REVERT = "revert"
+
+
 class RegressionScore(BaseModel):
     """Output of Agent 11: Regression Eval."""
 
@@ -147,7 +156,7 @@ class RegressionScore(BaseModel):
     score_delta: float
     regressions: list[str]
     improvements: list[str]
-    recommendation: str
+    recommendation: Recommendation
 
 
 class EvalResult(BaseModel):
@@ -163,7 +172,7 @@ class GateVerdict(BaseModel):
 
     passed: bool
     structural_score: float
-    behavioral_pass_rate: int
+    behavioral_pass_count: int
     behavioral_total: int
     regression_delta: float
     iteration: int
@@ -182,7 +191,7 @@ class LearningRecord(BaseModel):
     best_techniques: list[str]
     avoid_techniques: list[dict[str, str]]
     structural_score: float
-    behavioral_pass_rate: str
+    behavioral_pass_summary: str  # "11/11" format
     key_insight: str
     timestamp: str
 
