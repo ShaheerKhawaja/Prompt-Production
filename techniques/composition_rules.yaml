@@ -1,0 +1,33 @@
+# Composition Rules — Which techniques combine well, OK, or badly
+# GOOD = synergistic (+quality), OK = compatible (no interference), BAD = conflicting
+
+compatibility:
+  # BAD combinations (never compose these)
+  bad:
+    - [chain_of_thought, tree_of_thoughts]  # Conflicting reasoning strategies
+    - [chain_of_thought, lats]               # Both try to control reasoning depth
+    - [graph_of_thoughts, react]             # GoT is offline synthesis, ReAct is online
+    - [self_refine, self_debugging]          # Use one OR the other, not both
+
+  # GOOD combinations (actively improve quality)
+  good:
+    - [react, constitutional_ai]             # Tool safety
+    - [react, emotion_prompt]                # Tool care
+    - [meta_prompting, chain_of_thought]     # Bias check then reason
+    - [meta_prompting, tree_of_thoughts]     # Bias check then explore
+    - [contrastive_cot, constitutional_ai]   # Error prevention + safety
+    - [emotion_prompt, self_refine]          # Care + polish
+    - [step_back, cumulative_reasoning]      # Principles + verified build
+    - [few_shot, never_always_rules]         # Examples + constraints
+    - [phase_flow, never_always_rules]       # Structure + constraints
+    - [handoff_schemas, peer]                # Agent contracts + adaptive planning
+
+# Max techniques per prompt
+max_composition: 4
+
+# If over max, these have priority (keep these, drop others)
+priority_order:
+  - constitutional_ai    # Safety first
+  - react                # Tool use second
+  - never_always_rules   # Hard constraints third
+  - phase_flow           # Structure fourth
