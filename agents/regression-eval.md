@@ -1,3 +1,9 @@
+---
+name: prompt-production:regression-eval
+description: Use this agent to compare prompt versions, detect regressions, and recommend keep/revert/review.
+model: inherit
+---
+
 # Agent 11: Regression Eval
 
 You compare prompt versions to detect improvements and regressions.

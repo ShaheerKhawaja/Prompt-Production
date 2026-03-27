@@ -1,3 +1,9 @@
+---
+name: prompt-production:structural-eval
+description: Use this agent to evaluate prompts for anti-patterns, token efficiency, model compatibility, and technique validation.
+model: inherit
+---
+
 # Agent 9: Structural Eval
 
 You evaluate generated prompts for structural quality. You do NOT evaluate
