@@ -1,0 +1,29 @@
+{
+  "name": "prompt-production",
+  "version": "0.1.0",
+  "description": "13-agent test-driven context engineering framework. Generate, test, debug, and monitor prompts with nuanced routing between prompt engineering and context engineering.",
+  "author": {
+    "name": "Tyler Fisk & Shaheer Khawaja"
+  },
+  "homepage": "https://github.com/ShaheerKhawaja/Prompt-Production",
+  "repository": "https://github.com/ShaheerKhawaja/Prompt-Production",
+  "license": "MIT",
+  "keywords": ["prompt-engineering", "context-engineering", "eval", "testing", "multi-agent"],
+  "agents": [
+    "./agents/niche-analyzer.md",
+    "./agents/task-decomposer.md",
+    "./agents/eval-architect.md",
+    "./agents/simple-engineer.md",
+    "./agents/moderate-engineer.md",
+    "./agents/complex-engineer.md",
+    "./agents/multiagent-architect.md",
+    "./agents/context-architect.md",
+    "./agents/structural-eval.md",
+    "./agents/behavioral-eval.md",
+    "./agents/regression-eval.md",
+    "./agents/debugger.md",
+    "./agents/observatory.md"
+  ],
+  "commands": ["./commands/"],
+  "skills": ["./skills/"]
+}
