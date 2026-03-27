@@ -40,8 +40,10 @@ target-version = "py312"
 select = ["E", "W", "F", "I", "N", "UP", "S", "B", "A", "C4", "SIM"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S106"]
+"tests/**" = ["S101", "S106", "E501"]
 "src/prompt_production/agents/eval_architect.py" = ["S106"]
+"src/prompt_production/agents/debugger.py" = ["S106"]
+"src/prompt_production/agents/observatory.py" = ["S106"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
